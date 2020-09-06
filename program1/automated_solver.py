@@ -9,19 +9,7 @@ The second argument should be the filename to decrypt.
 e.g. 'python solvecipher.py [the_file]'
 """
 
-# Personal cribbing notes based on frequency and inspection
-# x -> e
-# q -> t
-# m -> h
-
-# a -> o
-# u -> i
-# i -> n
-
-# s -> a
-# i -> n
-
-# cribbing string : 5p hs ui kr gw lv xe 1c wd in qt sa ao 0y 8l 9b mh jf tm 7g dj nu oq bk 3z fx
+#pylint: disable=too-many-arguments
 
 import sys
 import string
@@ -79,7 +67,7 @@ def count_letter_frequency(cipher_text):
     """
     letter_frequency = {}
     for character in cipher_text:
-        if character not in (' ', '\n'):
+        if character not in (' ', '\n', '*'):
             if character not in letter_frequency:
                 letter_frequency[character] = 1
             else:
@@ -92,6 +80,8 @@ def count_letter_frequency(cipher_text):
         valid_chars.append(item[0])
 
 def cribbing_input():
+    print("For cribbing, please enter pairs of letters separated by spaces.")
+    print("For example, \'qt xe\' would mean \'q\' becomes \'t\' and \'x\' becomes \'e\'.")
     cribbed_letters =  input("Enter cribbing: ").split()
     for pair in cribbed_letters:
         if len(pair) != 2:
@@ -111,9 +101,10 @@ def decrypt_text():
 
     # Adds cribbed letters to the decryption table
     for pair in cribbing:
-        cipher_table[pair[0]] = pair[1]
-        selected_chars.append(pair[0])
-        valid_chars.remove(pair[0])
+        if pair[0] in valid_chars:
+            cipher_table[pair[0]] = pair[1]
+            selected_chars.append(pair[0])
+            valid_chars.remove(pair[0])
 
     # Initial result given cribbing
     update_table(cipher_table)
@@ -154,10 +145,11 @@ def get_error_count(selected_chars, curr_char, char_to_test, cipher_table):
     error_count = 0
     complete_words = []
     for word in cipher_words:
-        if word[0] != '*' and curr_char in word and check_word_complete(word, cipher_table, selected_chars) and word not in complete_words:
+        if (word[0] != '*' and curr_char in word and check_word_complete(word, selected_chars) and
+            word not in complete_words):
             complete_words.append(word)
 
-    complete_words.sort(key = lambda x: len(x))
+    complete_words.sort(key = len)
     for word in complete_words:
         valid = False
         permutation = {curr_char : char_to_test}
@@ -168,7 +160,7 @@ def get_error_count(selected_chars, curr_char, char_to_test, cipher_table):
             if char not in unique_letters:
                 unique_letters.append(char)
 
-        valid = valid or valid_permutation(word, unique_letters, 0, cipher_table,
+        valid = valid or valid_permutation([word, unique_letters], 0, cipher_table,
                                            permutation, curr_char)
         if not valid:
             error_count += 1
@@ -176,8 +168,9 @@ def get_error_count(selected_chars, curr_char, char_to_test, cipher_table):
             return error_count
     return error_count
 
-# TODO: SKIP SELECTED CHAR
-def valid_permutation(word, letters, index, cipher_table, permutation, char_to_skip):
+def valid_permutation(word_data, index, cipher_table, permutation, char_to_skip):
+    word = word_data[0]
+    letters = word_data[1]
     if index >= len(letters):
         plain_word = ""
         for char in word:
@@ -189,14 +182,14 @@ def valid_permutation(word, letters, index, cipher_table, permutation, char_to_s
     if curr_char == char_to_skip:
         if not char_unique(permutation[curr_char], curr_char, permutation):
             return False
-        return valid_permutation(word, letters, index + 1, cipher_table, permutation, char_to_skip)
+        return valid_permutation(word_data, index + 1, cipher_table, permutation, char_to_skip)
 
 
     for char in cipher_table[curr_char]:
         if not char_unique(char, curr_char, permutation):
             continue
         permutation[curr_char] = char
-        if valid_permutation(word, letters, index + 1, cipher_table, permutation, char_to_skip):
+        if valid_permutation(word_data, index + 1, cipher_table, permutation, char_to_skip):
             return True
         permutation[curr_char] = ""
     return False
@@ -216,7 +209,7 @@ def update_table(cipher_table):
                 if key != other_key:
                     cipher_table[other_key] = cipher_table[other_key].replace(cipher_table[key], "")
 
-def check_word_complete(word, cipher_table, selected_chars):
+def check_word_complete(word, selected_chars):
     for char in word:
         if char not in selected_chars:
             return False
