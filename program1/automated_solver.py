@@ -28,7 +28,7 @@ import string
 import fileio as fio
 
 SHORT_WORD_CUTOFF = 5
-ERROR_TOLERANCE = 1
+ERROR_TOLERANCE = 0
 
 alphabet_chars = list(string.ascii_lowercase)
 for i in range(10):
@@ -40,6 +40,7 @@ long_words = []
 cribbing = []
 plaintext_words = []
 cipher_words = []
+frequency = []
 
 def decrypt(filename):
     # Reads and processes the cipher text
@@ -57,17 +58,13 @@ def decrypt(filename):
             long_words.append(word)
 
     # Counts and displays letter frequency for cribbing
-    letter_frequencies = count_letter_frequency(cipher_text)
-    print(letter_frequencies)
+    count_letter_frequency(cipher_text)
+    print(frequency)
 
     cribbing_input()
     plaintext = decrypt_text()
-
-    # print()
-    # print("Decrypted text:")
-    # print(plaintext)
-    # filename = input("Enter the file you would like to write to: ")
-    # fio.write_to_file(filename, plaintext)
+    filename = input("Enter the file you would like to write to: ")
+    fio.write_to_file(filename, plaintext)
 
 def count_letter_frequency(cipher_text):
     """Counts and returns the letter frequencies
@@ -87,10 +84,12 @@ def count_letter_frequency(cipher_text):
                 letter_frequency[character] = 1
             else:
                 letter_frequency[character] += 1
-    characters = letter_frequency.keys()
-    for character in characters:
-        valid_chars.append(character)
-    return letter_frequency
+
+    for character in letter_frequency:
+        frequency.append([character, letter_frequency[character]])
+    frequency.sort(reverse = True, key = lambda count: count[1])
+    for item in frequency:
+        valid_chars.append(item[0])
 
 def cribbing_input():
     cribbed_letters =  input("Enter cribbing: ").split()
@@ -100,23 +99,6 @@ def cribbing_input():
             print("Continuing.....")
             return
         cribbing.append([pair[0], pair[1]])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 def decrypt_text():
     # For storing the order of letters to be checked
@@ -137,54 +119,25 @@ def decrypt_text():
     update_table(cipher_table)
     print_progress(cipher_table)
 
-
     while len(valid_chars) > 0:
-        next_char = input("Choose next char to decrypt or end to exit: ")
-        while next_char == "" or next_char[0] not in valid_chars:
-            next_char = input("Invalid, try again: ")
+        next_char = valid_chars[0]
+        # next_char = input("Choose next char to decrypt: ")
+        # while next_char == "" or next_char[0] not in valid_chars:
+        #     next_char = input("Invalid, try again: ")
         print("Decrypting " + next_char)
         valid_chars.remove(next_char)
         selected_chars.append(next_char)
         for char in selected_chars:
             permutation_loop(selected_chars, cipher_table, char)
+        update_table(cipher_table)
         print_progress(cipher_table)
 
     print(cipher_table)
 
+    plaintext = get_plaintext(cipher_table)
 
-
-
-
-
-
-
-
-    plaintext = ""
+    print("\n\n\nDecrytped text: " + plaintext)
     return plaintext
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 def permutation_loop(selected_chars, cipher_table, curr_char):
     if len(cipher_table[curr_char]) > 1:
@@ -194,16 +147,17 @@ def permutation_loop(selected_chars, cipher_table, curr_char):
             if error > ERROR_TOLERANCE:
                 print("Deleting " + char + "...")
                 cipher_table[curr_char] = cipher_table[curr_char].replace(char, "")
+            if len(cipher_table[curr_char]) == 0:
+                cipher_table[curr_char] = "".join(alphabet_chars)
 
 def get_error_count(selected_chars, curr_char, char_to_test, cipher_table):
     error_count = 0
     complete_words = []
     for word in cipher_words:
-        valid = False
-        if check_word_complete(word, cipher_table, selected_chars) and curr_char in word:
+        if word[0] != '*' and curr_char in word and check_word_complete(word, cipher_table, selected_chars) and word not in complete_words:
             complete_words.append(word)
 
-    # complete_words.sort(key = lambda x: len(x))
+    complete_words.sort(key = lambda x: len(x))
     for word in complete_words:
         valid = False
         permutation = {curr_char : char_to_test}
@@ -247,8 +201,6 @@ def valid_permutation(word, letters, index, cipher_table, permutation, char_to_s
         permutation[curr_char] = ""
     return False
 
-
-
 def char_unique(char, curr_char, permutation):
     for key in permutation:
         if char in permutation[key] and key != curr_char:
@@ -272,6 +224,8 @@ def check_word_complete(word, cipher_table, selected_chars):
 
 def check_word_valid(word):
     print("Checking " + word + "...")
+    if len(word) > 0 and word[0] == "*":
+        return True
     if len(word) < SHORT_WORD_CUTOFF:
         return word in short_words
     return word in long_words
@@ -279,7 +233,7 @@ def check_word_valid(word):
 def get_plaintext(cipher_table):
     to_return = ""
     for word in cipher_words:
-        for letter in word:
+        for letter in word.replace('*', ''):
             if cipher_table[letter] != "" and len(cipher_table[letter]) < 2:
                 to_return += cipher_table[letter]
             else:
@@ -306,5 +260,4 @@ def print_progress(cipher_table):
 if __name__ == "__main__":
     file_to_decrypt = sys.argv[1]
     print("Decrypting " + "\"" + file_to_decrypt + "\"")
-    ERROR_TOLERANCE = int(input("Please enter your desired error tolerance: "))
     decrypt(file_to_decrypt)
