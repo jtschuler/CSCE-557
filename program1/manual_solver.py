@@ -4,9 +4,13 @@
 
 """This module focuses on cracking the substitution cipher.
 
-This program is meant to be executed from the command line.
-The second argument should be the filename to decrypt.
-e.g. 'python solvecipher.py [the_file]'
+This program is meant to be executed from the command line using python 3. The
+second argument should be the filename to decrypt,
+e.g. 'python3 solvecipher.py [the_file]'
+
+This program is mostly a manual tool for cracking the substitution cipher,
+relying on user input and intelligence to replace letters based on frequency
+until a readable message appears.
 """
 
 # Notes based on frequency and inspection
@@ -35,6 +39,11 @@ cipher_words = []
 frequency = []
 
 def decrypt(filename):
+    """Preprocesses data and runs user I/O for the print file
+
+    Args:
+        filename: the name of the .txt file containing the cipher text.
+    """
     # Reads and processes the cipher text
     cipher_text = fio.read_file_data(filename)
     words = cipher_text.split()
@@ -47,19 +56,14 @@ def decrypt(filename):
 
     print("Decrypted text:")
     print(plaintext)
-    filename = input("Enter the file you would like to write to: ")
+    filename = input("Enter the (.txt) file you would like to write to: ")
     fio.write_to_file(filename, plaintext)
 
 def count_letter_frequency(cipher_text):
-    """Counts and returns the letter frequencies
+    """Counts and returns the letter frequencies.
 
     Args:
-        cipher_text:
-            The text whose letter frequency is to be counted
-
-    Returns:
-        letter_frequency:
-            A dictionary with letters as keys and frequency as values
+        cipher_text: The cipher text to be analyzed.
     """
     letter_frequency = {}
     for character in cipher_text:
@@ -75,6 +79,11 @@ def count_letter_frequency(cipher_text):
     frequency.sort(reverse = True, key = lambda count: count[1])
 
 def decrypt_text():
+    """Processes the cipher text by means of user input.
+
+    Returns:
+        The plaintext recovered from the cipher text
+    """
     # Initializes the decryption table
     cipher_table = {}
     for character in valid_chars:
@@ -82,8 +91,10 @@ def decrypt_text():
 
     print_progress(cipher_table)
 
+    # User input loop
     while True:
-        next_char = input("Choose next char to replace or undo, or type print to print result to file: ")
+        next_char = input("Choose next char to replace or undo, or type print \
+                            to print result to file: ")
         while next_char not in cipher_table and next_char != "print":
             next_char = input("Invalid, try again: ")
 
@@ -113,9 +124,25 @@ def decrypt_text():
 
 
 def replace_char(char_pair, cipher_table):
+    """Replaces the cipher character's match with the new plaintext character.
+
+    Args:
+        char_pair: The pair of matching letters. Index 0 is the cipher letter, and
+        index 1 is the plaintext letter.
+
+        cipher_table: The dictionary containing the cipher to plaintext translation.
+    """
     cipher_table[char_pair[0]] = char_pair[1]
 
 def get_plaintext(cipher_table):
+    """Replaces the cipher text with its plaintext match.
+
+    Args:
+        cipher_table: The dictionary containing the cipher to plaintext translation.
+
+    Returns:
+        The newly deciphered plaintext.
+    """
     to_return = ""
     for word in cipher_words:
         for letter in word:
@@ -127,12 +154,19 @@ def get_plaintext(cipher_table):
     return to_return
 
 def print_ciphertext():
+    """Prints the cipher text.
+    """
     to_print = "Ciphertext:\t"
     for word in cipher_words:
         to_print += word + " "
     print (to_print)
 
 def print_progress(cipher_table):
+    """Helper method for readability to print the current result.
+
+    Args:
+        cipher_table: The dictionary containing the cipher to plaintext translation.
+    """
     print("\n\n\n\n\n\n\n\n\n\n")
     print_frequency()
     print()
@@ -143,6 +177,8 @@ def print_progress(cipher_table):
     print("Chars left: " + str(valid_chars))
 
 def print_frequency():
+    """Helper method to improve readability for letter frequencies
+    """
     string = ""
     if len(frequency) > 0:
         string = frequency[0][0] + ": " + str(frequency[0][1])
