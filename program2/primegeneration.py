@@ -5,8 +5,6 @@ import numpy as np
 import secrets
 import sys
 
-output = "primes.txt"
-
 def main():
     primes = []
     n_bits = 32
@@ -39,21 +37,29 @@ def main():
             if prime:
                 primes.append(n)
 
-    string = ""
-    for i in range(2):
-        string += str(primes[i]) + "\t"
-    string += "\n"
-    for i in range(2):
-        string += "{0:b}".format(primes[i]) + "\t"
+    print("\n\np: " + str(primes[0]) + "\tq: " + str(primes[1]))
 
-    print("\n\n" + string)
+    p = primes[0]
+    q = primes[1]
 
-    pq = primes[0] * primes[1]
+    n = p * q
+    phi_n = (p - 1) * (q - 1)
 
-    print("\np * q = " + str(pq))
-    print("p * q = " + "{0:b}".format(pq))
-    print(len("{0:b}".format(pq)))
+    print("\nn = " + str(n))
+    print("phi_n = " + str(phi_n))
+    print(str(len("{0:b}".format(n))) + " bits in length\n\n")
 
+
+    print("Encryption and Decryption Exponentiation:")
+    e, d = find_decryption(phi_n)
+    print("Decryption exponent found!")
+    print("e: " + str(e) + "\td: " + str(d))
+
+    print("Printing to file...")
+    filename = input("Enter desired filename: ")
+    file = open(filename, "w")
+    file.write(str(p) + ' ' + str(q) + ' ' + str(e) + ' ' + str(d) + '\n')
+    file.close()
 
 def find_d_r(n: int):
     # Need to find d, r such that n - 1 = d * (2 ^ r)
@@ -85,6 +91,28 @@ def millerrabin(n, d, r):
         if x == n - 1:
             return True
     return False
+
+# From here on related to finding d from e
+def find_decryption(n):
+    # ex - ny = 1
+    e = int(input("Enter choice for e: "))
+    gcd, x, y = extended_euclidean(e, n)
+    while gcd != 1:
+        print("Choice of e is not coprime to phi_n!\nGCD: " + str(gcd))
+        e = int(input("\nPlease enter a different choice for e: "))
+        gcd, x, y = extended_euclidean(e, n)
+    return e, x % n
+
+def extended_euclidean(a, b):
+    if b > a:
+        return extended_euclidean(b, a)
+    if b == 0:
+        return a, 0, 1
+    # a - bq = r
+    q = a // b
+    r = a % b
+    gcd, x, y = extended_euclidean(b, a % b)
+    return gcd, y - q * x, x
 
 
 def modular_exponentiation(base, power, modulus):
