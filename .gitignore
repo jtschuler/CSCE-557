@@ -58,3 +58,6 @@ target/
 
 # macOS files
 .DS_Store_
+
+# Don't track zip files
+*.zip
