@@ -124,18 +124,26 @@ def ascii_to_integer(text):
     return integer
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print("Please name an input file!")
+    if len(sys.argv) < 3:
+        print("Please name input files!")
         sys.exit()
-    if len(sys.argv) > 2:
+    if len(sys.argv) > 3:
         print("Too many arguments specified!")
         sys.exit()
+
     input_file = open(sys.argv[1])
     args = input_file.readline().split()
     input_file.close()
+    if len(args) != 4:
+        print('Program arguments in prime file not formatted properly!')
+        sys.exit()
     prime_one = int(args[0])
     prime_two = int(args[1])
     encryption_exp = int(args[2])
     decryption_exp = int(args[3])
-    message = 'This is the message I would like to encrypt!'
+
+    input_file = open(sys.argv[2])
+    message = input_file.read()
+    input_file.close()
+
     encrypt(prime_one, prime_two, encryption_exp, decryption_exp, message)
