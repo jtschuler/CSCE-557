@@ -1,9 +1,24 @@
 # Jadon Schuler
 # Copyright 2020
 
+# pylint: disable=C0103
+
+"""This module finds points on an elliptic curve modulo a prime number.
+"""
+
 import sys
 
 def find_points(a, b, prime):
+    """Finds points on the elliptic curve mod prime
+
+    Args:
+        a: The a value of the elliptic curve
+        b: The b value of the elliptic curve
+        prime: the prime modulus
+
+    Returns:
+        the list of points on the curve
+    """
     proot = find_root(prime)
     if proot == -1:
         print('No primitive root found!')
@@ -12,6 +27,7 @@ def find_points(a, b, prime):
     print('Points on the curve\t' + 'a: ' + str(a) + '\tb: ' +
             str(b) + '\tprime: ' + str(prime))
     print('Primitive root: ' + str(proot))
+
     points = []
     for x in range(prime):
         ysquare = (x**3 + a * x + b) % prime
@@ -22,10 +38,9 @@ def find_points(a, b, prime):
             point1 = (x, y)
             point2 = (x, y_neg)
 
-            if(y_neg < y):
-                tmp = point2
-                point2 = point1
-                point1 = tmp
+            if y_neg < y:
+                point1 = (x, y_neg)
+                point2 = (x, y)
 
             if point1 not in points:
                 points.append(point1)
@@ -59,17 +74,35 @@ def modular_exponentiation(base, power, modulus):
     return result
 
 def check_square(x, prime, proot):
+    """Checks if x is a square modulo prime
+
+    Args:
+        x: the number to be checked
+        prime: the prime
+        proot: the primitive root of prime
+
+    Returns:
+        The root if it exists, else -1
+    """
     result = proot
     exp = 1
-    while(result != x):
+    while result != x:
         result = (result * proot) % prime
         exp += 1
     if (exp & 1) == 0:
-        return exp >> 1
-    else:
-        return -1
+        exp = exp >> 1
+        return modular_exponentiation(proot, exp, prime)
+    return -1
 
 def find_root(prime):
+    """Finds a primitive root of prime
+
+    Args:
+        prime: the prime
+
+    Returns:
+        the lowest primitive root of prime
+    """
     for i in range(1, prime):
         exp = 1
         for _ in range(prime - 2):
@@ -78,4 +111,4 @@ def find_root(prime):
                 break
         if exp != 1:
             return i
-    return -1;
+    return -1
