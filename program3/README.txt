@@ -66,5 +66,7 @@ wasn't feasible.
 Instead, my program calculates the order of a point as it finds one so that one
 doesn't have to wait an unreasonable amount of time just to START getting useful
 results. That being said, running on a large prime like 1000003 will still take
-a lot of time since the arithmetic is costly. However, I am fairly certain it is
-correct, since the powered up points still appear to be solutions on the curve.
+a lot of time since the arithmetic is costly. To that end, my program only
+outputs a point's data AFTER that point's order has been calculated, so it may
+take a while for ANY data to appear. However, I am fairly certain it is correct,
+since the powered up points still appear to be solutions on the curve.

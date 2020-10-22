@@ -3,6 +3,7 @@
 
 # pylint: disable=C0103
 # pylint: disable=W1114
+# pylint: disable=R0914
 
 """This module finds the orders of points on an elliptic curve mod a prime p
 """
@@ -42,8 +43,18 @@ def main(a, b, prime):
                 point1 = Point(x, y_neg, 1, 'Affine')
                 point2 = Point(x, y, 1, 'Affine')
 
-            order1 = find_order(point1, a, prime)
-            order2 = find_order(point1, a, prime)
+            order1, points1 = find_order(point1, a, prime)
+
+            print('\n\nSearching Point: ' + point1.tuple_string() + '\tOrder: ' + str(order1))
+            for i, p in enumerate(points1):
+                print('M: ' + str(i+2) + '\t' + p.to_string() + '\t' + p.affine(prime).to_string())
+
+
+            order2, points2 = find_order(point2, a, prime)
+
+            print('\n\nSearching Point: ' + point2.tuple_string() + '\tOrder: ' + str(order2))
+            for i, p in enumerate(points2):
+                print('M: ' + str(i+2) + '\t' + p.to_string() + '\t' + p.affine(prime).to_string())
 
             if order1 > max_order:
                 max_order = order1
@@ -53,6 +64,7 @@ def main(a, b, prime):
                 max_order = order2
                 max_point = point2
 
+    # Max order point of ALL the points
     print('\nMax Order Point: ' + max_point.tuple_string() + '\tOrder: ' + str(max_order))
 
 
@@ -68,20 +80,21 @@ def find_order(point, a, prime):
     Returns:
         the order of the point
     """
-    print('\n\nSearching Point: ' + point.tuple_string())
+
     if point.z == 0:
         return 1
 
+    points = []
+
     p2 = double_point(point, a, prime)
-    print(p2.to_string() + '\t' + p2.affine(prime).to_string())
+    points.append(p2)
     # Starts at two since we've already done an addition
     count = 2
     while p2.z != 0:
         count += 1
         p2 = add_points(p2, point, prime)
-        print(p2.to_string() + '\t' + p2.affine(prime).to_string())
-    print('Order: ' + str(count))
-    return count
+        points.append(p2)
+    return count, points
 
 
 
@@ -223,6 +236,8 @@ def check_square(x, prime, proot):
     Returns:
         The root if it exists, else -1
     """
+    if x == 1:
+        return 1
     result = proot
     exp = 1
     while result != x:
