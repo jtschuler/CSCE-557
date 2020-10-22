@@ -8,43 +8,54 @@
 """
 
 import sys
-import findpoints as fp
 
 def main(a, b, prime):
-    """Main function
+    """Finds points and calculates each point's order
 
     Args:
         a: the elliptic curves' a value
         b: the elliptic curve's b value
         prime: the modulus
     """
-    point_tuples = fp.find_points(a, b, prime)
-    points = []
-    for point in point_tuples:
-        points.append(Point(point[0], point[1], 1, 'Affine'))
-    max_order, max_point = find_max_order(points, a, prime)
-    print('\nMax Order Point: ' + max_point.tuple_string() + '\tOrder: ' + str(max_order))
 
-def find_max_order(points, a, prime):
-    """Finds the max order and associated point in points
+    proot = find_root(prime)
+    if proot == -1:
+        print('No primitive root found!')
+        sys.exit()
 
-    Args:
-        points: List of points on the elliptic curve
-        a: the elliptic curve's a value
-        prime: the modulus
+    print('Points on the curve\t' + 'a: ' + str(a) + '\tb: ' +
+            str(b) + '\tprime: ' + str(prime))
+    print('Primitive root: ' + str(proot))
 
-    Returns:
-        The max order and the point it was found at
-    """
     max_order = 0
     max_point = None
+    for x in range(prime):
+        ysquare = (x**3 + a * x + b) % prime
+        y = check_square(ysquare, prime, proot)
+        if y != -1:
+            y_neg = prime - y
 
-    for point in points:
-        order = find_order(point, a, prime)
-        if order > max_order:
-            max_order = order
-            max_point = point
-    return max_order, max_point
+            point1 = Point(x, y, 1, 'Affine')
+            point2 = Point(x, y_neg, 1, 'Affine')
+
+            if y_neg < y:
+                point1 = Point(x, y_neg, 1, 'Affine')
+                point2 = Point(x, y, 1, 'Affine')
+
+            order1 = find_order(point1, a, prime)
+            order2 = find_order(point1, a, prime)
+
+            if order1 > max_order:
+                max_order = order1
+                max_point = point1
+
+            if order2 > max_order:
+                max_order = order2
+                max_point = point2
+
+    print('\nMax Order Point: ' + max_point.tuple_string() + '\tOrder: ' + str(max_order))
+
+
 
 def find_order(point, a, prime):
     """Finds the order of a point on an elliptic curve
@@ -62,13 +73,13 @@ def find_order(point, a, prime):
         return 1
 
     p2 = double_point(point, a, prime)
-    print(p2.to_string() + '\t' + p2.affine(31).to_string())
+    print(p2.to_string() + '\t' + p2.affine(prime).to_string())
     # Starts at two since we've already done an addition
     count = 2
     while p2.z != 0:
         count += 1
         p2 = add_points(p2, point, prime)
-        print(p2.to_string() + '\t' + p2.affine(31).to_string())
+        print(p2.to_string() + '\t' + p2.affine(prime).to_string())
     print('Order: ' + str(count))
     return count
 
@@ -105,8 +116,12 @@ def double_point(point, a, prime):
 
     return Point(x3 % prime, y3 % prime, z3 % prime)
 
+
+
 def add_points(point1, point2, prime):
     """Function to add two points on an elliptic curve
+
+    NOTE: point2's z-value MUST be 1
 
     Args:
         point1: the first point
@@ -151,6 +166,8 @@ def modular_inverse(num, prime):
     _, x, _ = extended_euclidean(num, prime)
     return x % prime
 
+
+
 def extended_euclidean(a, b):
     """The extended euclidean algorithm
 
@@ -172,6 +189,74 @@ def extended_euclidean(a, b):
     gcd, x, y = extended_euclidean(b, a % b)
     return gcd, y, x - q * y
 
+
+
+def modular_exponentiation(base, power, modulus):
+    """Efficient modular exponentiation
+
+    Args:
+        base: the base
+        power: the power
+        modulus: the modulus
+
+    Returns:
+        The result of base ^ power (mod modulus)
+    """
+    result = 1
+    while power > 0:
+        if power & 1 == 1:
+            result = (result * base) % modulus
+        base = (base * base) % modulus
+        power = power >> 1
+    return result
+
+
+
+def check_square(x, prime, proot):
+    """Checks if x is a square modulo prime
+
+    Args:
+        x: the number to be checked
+        prime: the prime
+        proot: the primitive root of prime
+
+    Returns:
+        The root if it exists, else -1
+    """
+    result = proot
+    exp = 1
+    while result != x:
+        result = (result * proot) % prime
+        exp += 1
+    if (exp & 1) == 0:
+        exp = exp >> 1
+        return modular_exponentiation(proot, exp, prime)
+    return -1
+
+
+
+
+def find_root(prime):
+    """Finds a primitive root of prime
+
+    Args:
+        prime: the prime
+
+    Returns:
+        the lowest primitive root of prime
+    """
+    for i in range(1, prime):
+        exp = 1
+        for _ in range(prime - 2):
+            exp = (exp * i) % prime
+            if exp == 1:
+                break
+        if exp != 1:
+            return i
+    return -1
+
+
+
 class Point:
     """Class for holding a point's data
     """
@@ -188,8 +273,8 @@ class Point:
         if self.z == 0:
             return self
         inv = modular_inverse(self.z, prime)
-        x_a = (self.x * fp.modular_exponentiation(inv, 2, prime)) % prime
-        y_a = (self.y * fp.modular_exponentiation(inv, 3, prime)) % prime
+        x_a = (self.x * modular_exponentiation(inv, 2, prime)) % prime
+        y_a = (self.y * modular_exponentiation(inv, 3, prime)) % prime
         return Point(x_a, y_a, 1, 'Affine')
     def to_string(self):
         """Create string
@@ -199,6 +284,7 @@ class Point:
         """Create string
         """
         return '(' + str(self.x) + ', ' + str(self.y) + ', ' + str(self.z) + ')'
+
 
 
 if __name__ == '__main__':
